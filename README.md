@@ -1,6 +1,6 @@
 # Ledger
 
-A money transfer CRM with a live rate engine and WhatsApp integration. Built with Node.js, Express, and SQLite.
+A money transfer CRM with a live rate engine and WhatsApp integration. Built with Node.js, Express, and Postgres.
 
 ## What's included
 
@@ -14,17 +14,21 @@ The site is transparent with every customer about how transfers work — rates a
 
 ## Local development
 
+Requires a Postgres database. The free tier of [Neon](https://neon.tech) or [Supabase](https://supabase.com) both work — create a project, copy the connection string.
+
 ```bash
 npm install
-cp .env.example .env      # fill in RATE_FIAT, RATE_MARGIN_PERCENT, and WhatsApp credentials if using that feature
+cp .env.example .env      # fill in DATABASE_URL, RATE_FIAT, RATE_MARGIN_PERCENT, and WhatsApp credentials if using that feature
 npm start
 ```
+
+Tables are created automatically on startup if they don't already exist.
 
 - Site: `http://localhost:3000`
 - Dashboard: `http://localhost:3000/dashboard.html`
 - WhatsApp webhook: `http://localhost:3000/whatsapp/webhook`
 
-The site, dashboard, and rate API work with no configuration. WhatsApp auto-reply requires:
+The site, dashboard, and rate API work as soon as `DATABASE_URL` is set. WhatsApp auto-reply additionally requires:
 
 1. A verified Meta Business account
 2. A WhatsApp Business phone number registered through Meta's dashboard → gives you `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`
@@ -34,11 +38,11 @@ The site, dashboard, and rate API work with no configuration. WhatsApp auto-repl
 
 Configured for [Render](https://render.com) via `render.yaml`:
 
-1. Render → **New** → **Blueprint**, connect this repo
-2. Render provisions the web service and a persistent disk (mounted at `/data`) for the SQLite database
-3. Set the WhatsApp env vars in Render's dashboard if you're using that feature
+1. Create a free Postgres database (Neon or Supabase) and copy its connection string
+2. Render → **New** → **Blueprint**, connect this repo
+3. When prompted for env vars, paste the connection string into `DATABASE_URL`, and set the WhatsApp vars if using that feature
 
-The database path is controlled by `DB_PATH` — unset locally (defaults to a local file), set to `/data/ledger.db` in production by `render.yaml`.
+Render's free tier doesn't support persistent disks, which is why this runs on Postgres rather than the SQLite file used in early development — a hosted database keeps data intact across deploys and restarts on the free plan.
 
 ## API
 

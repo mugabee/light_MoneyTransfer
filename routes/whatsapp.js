@@ -1,5 +1,5 @@
 const express = require('express');
-const { db, logAudit } = require('../db');
+const { pool, logAudit } = require('../db');
 const { getP2pSummary } = require('./rates');
 
 const router = express.Router();
@@ -84,15 +84,18 @@ router.post('/webhook', express.json(), async (req, res) => {
     const from = message.from; // phone number, no '+'
     const text = message.text.body;
 
-    let contact = db.prepare('SELECT * FROM contacts WHERE handle = ? AND channel = ?').get(from, 'whatsapp');
+    const existing = await pool.query(
+      'SELECT * FROM contacts WHERE handle = $1 AND channel = $2',
+      [from, 'whatsapp']
+    );
+    let contact = existing.rows[0];
     if (!contact) {
-      const result = db
-        .prepare(
-          `INSERT INTO contacts (name, channel, handle, source) VALUES (?, 'whatsapp', ?, 'WhatsApp inbound')`
-        )
-        .run(from, from);
-      contact = db.prepare('SELECT * FROM contacts WHERE id = ?').get(result.lastInsertRowid);
-      logAudit('contact', contact.id, 'create', { source: 'WhatsApp inbound' });
+      const { rows } = await pool.query(
+        `INSERT INTO contacts (name, channel, handle, source) VALUES ($1, 'whatsapp', $1, 'WhatsApp inbound') RETURNING *`,
+        [from]
+      );
+      contact = rows[0];
+      await logAudit('contact', contact.id, 'create', { source: 'WhatsApp inbound' });
     }
 
     const reply = await buildReply(text);

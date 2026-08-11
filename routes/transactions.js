@@ -1,19 +1,20 @@
 const express = require('express');
-const { db, logAudit } = require('../db');
+const { pool, logAudit } = require('../db');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { contact_id } = req.query;
-  const rows = contact_id
-    ? db
-        .prepare('SELECT * FROM transactions WHERE contact_id = ? ORDER BY created_at DESC')
-        .all(contact_id)
-    : db.prepare('SELECT * FROM transactions ORDER BY created_at DESC').all();
+  const { rows } = contact_id
+    ? await pool.query(
+        'SELECT * FROM transactions WHERE contact_id = $1 ORDER BY created_at DESC',
+        [contact_id]
+      )
+    : await pool.query('SELECT * FROM transactions ORDER BY created_at DESC');
   res.json(rows);
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { contact_id, direction, amount, currency_from, currency_to, rate, notes } = req.body;
 
   if (!contact_id || !direction || !amount || !currency_from || !currency_to || !rate) {
@@ -25,27 +26,26 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: "direction must be 'buy' or 'sell'" });
   }
 
-  const contact = db.prepare('SELECT id FROM contacts WHERE id = ?').get(contact_id);
-  if (!contact) return res.status(404).json({ error: 'Contact not found' });
+  const contact = await pool.query('SELECT id FROM contacts WHERE id = $1', [contact_id]);
+  if (!contact.rows[0]) return res.status(404).json({ error: 'Contact not found' });
 
-  const result = db
-    .prepare(
-      `INSERT INTO transactions (contact_id, direction, amount, currency_from, currency_to, rate, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(contact_id, direction, amount, currency_from, currency_to, rate, notes || null);
+  const { rows } = await pool.query(
+    `INSERT INTO transactions (contact_id, direction, amount, currency_from, currency_to, rate, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    [contact_id, direction, amount, currency_from, currency_to, rate, notes || null]
+  );
 
-  logAudit('transaction', result.lastInsertRowid, 'create', req.body);
-  const row = db.prepare('SELECT * FROM transactions WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(row);
+  const tx = rows[0];
+  await logAudit('transaction', tx.id, 'create', req.body);
+  res.status(201).json(tx);
 });
 
-router.delete('/:id', (req, res) => {
-  const existing = db.prepare('SELECT * FROM transactions WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Transaction not found' });
+router.delete('/:id', async (req, res) => {
+  const existing = await pool.query('SELECT * FROM transactions WHERE id = $1', [req.params.id]);
+  if (!existing.rows[0]) return res.status(404).json({ error: 'Transaction not found' });
 
-  db.prepare('DELETE FROM transactions WHERE id = ?').run(req.params.id);
-  logAudit('transaction', req.params.id, 'delete', existing);
+  await pool.query('DELETE FROM transactions WHERE id = $1', [req.params.id]);
+  await logAudit('transaction', req.params.id, 'delete', existing.rows[0]);
   res.status(204).end();
 });
 

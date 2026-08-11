@@ -1,61 +1,63 @@
 const express = require('express');
-const { db, logAudit } = require('../db');
+const { pool, logAudit } = require('../db');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM contacts ORDER BY created_at DESC').all();
+router.get('/', async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM contacts ORDER BY created_at DESC');
   res.json(rows);
 });
 
-router.get('/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Contact not found' });
-  res.json(row);
+router.get('/:id', async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM contacts WHERE id = $1', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Contact not found' });
+  res.json(rows[0]);
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { name, channel, handle, source, notes } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
-  const result = db
-    .prepare(
-      `INSERT INTO contacts (name, channel, handle, source, notes) VALUES (?, ?, ?, ?, ?)`
-    )
-    .run(name, channel || 'other', handle || null, source || null, notes || null);
-
-  logAudit('contact', result.lastInsertRowid, 'create', { name, channel });
-  const row = db.prepare('SELECT * FROM contacts WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(row);
-});
-
-router.put('/:id', (req, res) => {
-  const existing = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Contact not found' });
-
-  const { name, channel, handle, source, notes } = req.body;
-  db.prepare(
-    `UPDATE contacts SET name = ?, channel = ?, handle = ?, source = ?, notes = ?, updated_at = datetime('now') WHERE id = ?`
-  ).run(
-    name ?? existing.name,
-    channel ?? existing.channel,
-    handle ?? existing.handle,
-    source ?? existing.source,
-    notes ?? existing.notes,
-    req.params.id
+  const { rows } = await pool.query(
+    `INSERT INTO contacts (name, channel, handle, source, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [name, channel || 'other', handle || null, source || null, notes || null]
   );
 
-  logAudit('contact', req.params.id, 'update', req.body);
-  const row = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
-  res.json(row);
+  const contact = rows[0];
+  await logAudit('contact', contact.id, 'create', { name, channel });
+  res.status(201).json(contact);
 });
 
-router.delete('/:id', (req, res) => {
-  const existing = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Contact not found' });
+router.put('/:id', async (req, res) => {
+  const existing = await pool.query('SELECT * FROM contacts WHERE id = $1', [req.params.id]);
+  if (!existing.rows[0]) return res.status(404).json({ error: 'Contact not found' });
 
-  db.prepare('DELETE FROM contacts WHERE id = ?').run(req.params.id);
-  logAudit('contact', req.params.id, 'delete', existing);
+  const { name, channel, handle, source, notes } = req.body;
+  const current = existing.rows[0];
+
+  const { rows } = await pool.query(
+    `UPDATE contacts SET name = $1, channel = $2, handle = $3, source = $4, notes = $5, updated_at = now()
+     WHERE id = $6 RETURNING *`,
+    [
+      name ?? current.name,
+      channel ?? current.channel,
+      handle ?? current.handle,
+      source ?? current.source,
+      notes ?? current.notes,
+      req.params.id,
+    ]
+  );
+
+  await logAudit('contact', req.params.id, 'update', req.body);
+  res.json(rows[0]);
+});
+
+router.delete('/:id', async (req, res) => {
+  const existing = await pool.query('SELECT * FROM contacts WHERE id = $1', [req.params.id]);
+  if (!existing.rows[0]) return res.status(404).json({ error: 'Contact not found' });
+
+  await pool.query('DELETE FROM contacts WHERE id = $1', [req.params.id]);
+  await logAudit('contact', req.params.id, 'delete', existing.rows[0]);
   res.status(204).end();
 });
 
