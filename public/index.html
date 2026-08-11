@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Fast Money Transfer</title>
+<meta name="description" content="Fast, fair money transfers, powered by USDT for speed and transparent live rates." />
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="landing.css" />
+</head>
+<body class="landing">
+
+<div class="bg-fx" aria-hidden="true">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-grid"></div>
+</div>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="/" class="brand-link">Ledger</a>
+    <nav class="site-nav">
+      <a href="#how-it-works">How it works</a>
+      <a href="#rates">Rates</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact" class="btn small">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-badge"><span class="pulse-dot"></span> Live rates, always on</div>
+    <h1>Send money <span class="text-gradient">fast</span>, at a fair rate.</h1>
+    <p class="hero-sub">
+      We're a money transfer service. Tell us how much you want to send,
+      we confirm today's rate, and your recipient gets paid out — usually within minutes.
+      We convert USDT to USD as part of completing your transfer, which is what lets us
+      offer speed and live, transparent rates instead of the usual bank delays and markups.
+    </p>
+    <div class="hero-rate" id="hero-rate">Loading today's rate…</div>
+    <a href="#contact" class="btn large glow">Send money</a>
+  </section>
+
+  <section id="how-it-works" class="section" data-reveal>
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>
+        <span class="step-num">1</span>
+        <div>
+          <h3>Tell us the amount</h3>
+          <p>Message us how much you want to send and which currency your recipient should get.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div>
+          <h3>We confirm the rate</h3>
+          <p>You get today's live rate up front — no surprises, no hidden fees.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div>
+          <h3>You send funds our way</h3>
+          <p>We move your transfer via USDT under the hood — you just send to the address we provide.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <div>
+          <h3>Your recipient gets paid</h3>
+          <p>Once confirmed on-chain, we send the payout to your recipient in their local currency.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="rates" class="section rates-section" data-reveal>
+    <h2>Check your rate</h2>
+    <p class="section-sub">Choose your currency and see what you'll get, live.</p>
+
+    <div class="converter" id="converter">
+      <div class="converter-row">
+        <label class="converter-field">
+          <span class="converter-label">You have</span>
+          <div class="converter-input-group">
+            <input type="number" id="amount-input" inputmode="decimal" placeholder="0" min="0" step="any" />
+            <select id="have-currency"></select>
+          </div>
+        </label>
+
+        <button type="button" id="swap-btn" class="swap-btn" title="Swap" aria-label="Swap currencies">⇄</button>
+
+        <label class="converter-field">
+          <span class="converter-label">You get</span>
+          <div class="converter-input-group">
+            <output id="result-output">0</output>
+            <select id="want-currency"></select>
+          </div>
+        </label>
+      </div>
+
+      <p class="converter-rate" id="converter-rate">Loading live rate…</p>
+    </div>
+
+    <p class="rate-note">Rates are based on live market prices and update continuously. Final rate is confirmed at the time of your transfer.</p>
+  </section>
+
+  <section id="faq" class="section" data-reveal>
+    <h2>Frequently asked questions</h2>
+    <div class="faq">
+      <details>
+        <summary>How does the transfer actually work?</summary>
+        <p>We convert USDT to USD as part of moving your money. That's what lets us settle transfers quickly and quote a live, transparent rate instead of the delays and hidden markups of traditional bank transfers.</p>
+      </details>
+      <details>
+        <summary>Is this safe?</summary>
+        <p>We confirm the rate with you before you send anything, and payouts are sent as soon as your transfer is confirmed on-chain. Start with a small test amount if you're new to us.</p>
+      </details>
+      <details>
+        <summary>How fast is payout?</summary>
+        <p>Usually within minutes of your transfer confirming, during normal hours.</p>
+      </details>
+      <details>
+        <summary>What currencies do you support?</summary>
+        <p>Message us your currency — we support a range of local payout options.</p>
+      </details>
+    </div>
+  </section>
+
+  <section id="contact" class="section contact-section" data-reveal>
+    <h2>Get started</h2>
+    <p>Message us on WhatsApp or Telegram to get today's rate and start your transfer.</p>
+    <div class="contact-links">
+      <a class="btn large" href="#" id="whatsapp-link">WhatsApp us</a>
+      <a class="btn large secondary" href="#" id="telegram-link">Telegram</a>
+    </div>
+    <p class="contact-note">Update the links in <code>public/landing.js</code> with your real WhatsApp and Telegram contact details.</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Ledger — money transfer, powered by USDT. <a href="/dashboard.html">Staff dashboard</a></p>
+</footer>
+
+<script src="landing.js"></script>
+</body>
+</html>

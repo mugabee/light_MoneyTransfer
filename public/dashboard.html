@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><a href="/" class="brand-link">Ledger</a></div>
+  <div id="rate-widget" class="rate-widget">Loading rate…</div>
+</header>
+
+<main class="layout">
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Contacts</h2>
+      <button id="new-contact-btn" class="btn">+ New contact</button>
+    </div>
+    <table class="table" id="contacts-table">
+      <thead>
+        <tr><th>Name</th><th>Channel</th><th>Handle</th><th>Source</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Transactions</h2>
+      <button id="new-tx-btn" class="btn">+ New transaction</button>
+    </div>
+    <table class="table" id="tx-table">
+      <thead>
+        <tr><th>Contact</th><th>Dir</th><th>Amount</th><th>From</th><th>To</th><th>Rate</th><th>When</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+
+<dialog id="contact-dialog">
+  <form id="contact-form" class="form">
+    <h3>New contact</h3>
+    <label>Name <input name="name" required /></label>
+    <label>Channel
+      <select name="channel">
+        <option value="whatsapp">WhatsApp</option>
+        <option value="telegram">Telegram</option>
+        <option value="instagram">Instagram</option>
+        <option value="facebook">Facebook</option>
+        <option value="phone">Phone</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <label>Handle <input name="handle" /></label>
+    <label>Source <input name="source" /></label>
+    <label>Notes <textarea name="notes"></textarea></label>
+    <div class="form-actions">
+      <button type="button" class="btn secondary" data-close>Cancel</button>
+      <button type="submit" class="btn">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="tx-dialog">
+  <form id="tx-form" class="form">
+    <h3>New transaction</h3>
+    <label>Contact
+      <select name="contact_id" required></select>
+    </label>
+    <label>Direction
+      <select name="direction">
+        <option value="buy">Buy (we buy USDT)</option>
+        <option value="sell">Sell (we sell USDT)</option>
+      </select>
+    </label>
+    <label>Amount <input name="amount" type="number" step="any" required /></label>
+    <label>Currency from <input name="currency_from" value="USDT" required /></label>
+    <label>Currency to <input name="currency_to" value="RWF" required /></label>
+    <label>Rate <input name="rate" type="number" step="any" required /></label>
+    <label>Notes <textarea name="notes"></textarea></label>
+    <div class="form-actions">
+      <button type="button" class="btn secondary" data-close>Cancel</button>
+      <button type="submit" class="btn">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
