@@ -1,7 +1,8 @@
 {
   "name": "ledger-crm",
   "version": "1.0.0",
-  "description": "CRM + live rate engine + WhatsApp integration for a crypto-fiat OTC / transfer service",
+  "private": true,
+  "description": "Money transfer CRM with a live rate engine and WhatsApp integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
