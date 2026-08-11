@@ -23,6 +23,22 @@ const FIAT_CURRENCIES = [
 const USDT = { code: 'USDT', label: '🪙 USDT — Tether' };
 const ALL_CURRENCIES = [USDT, ...FIAT_CURRENCIES];
 
+const FLAGS = {
+  USDT: '🪙',
+  RWF: '🇷🇼',
+  UGX: '🇺🇬',
+  KES: '🇰🇪',
+  TZS: '🇹🇿',
+  EUR: '🇪🇺',
+  USD: '🇺🇸',
+  ZAR: '🇿🇦',
+};
+
+function withFlag(code) {
+  const flag = FLAGS[code];
+  return flag ? `${flag} ${code}` : code;
+}
+
 const rateCache = new Map(); // fiat code -> { clientRate, mid, fetchedAt }
 const RATE_TTL_MS = 60_000;
 
@@ -74,17 +90,17 @@ async function runConversion() {
     if (have === 'USDT' && want !== 'USDT') {
       const { clientRate } = await getClientRate(want);
       result = amount * clientRate;
-      rateLine = `1 USDT ≈ ${fmt(clientRate)} ${want}`;
+      rateLine = `1 ${withFlag('USDT')} ≈ ${fmt(clientRate)} ${withFlag(want)}`;
     } else if (have !== 'USDT' && want === 'USDT') {
       const { clientRate } = await getClientRate(have);
       result = clientRate > 0 ? amount / clientRate : 0;
-      rateLine = `1 USDT ≈ ${fmt(clientRate)} ${have}`;
+      rateLine = `1 ${withFlag('USDT')} ≈ ${fmt(clientRate)} ${withFlag(have)}`;
     } else {
       // fiat -> fiat, routed through USDT
       const [haveRate, wantRate] = await Promise.all([getClientRate(have), getClientRate(want)]);
       const usdtAmount = haveRate.clientRate > 0 ? amount / haveRate.clientRate : 0;
       result = usdtAmount * wantRate.clientRate;
-      rateLine = `1 ${have} ≈ ${fmt(wantRate.clientRate / haveRate.clientRate)} ${want}`;
+      rateLine = `1 ${withFlag(have)} ≈ ${fmt(wantRate.clientRate / haveRate.clientRate)} ${withFlag(want)}`;
     }
 
     resultOutput.textContent = fmt(result);
@@ -127,11 +143,12 @@ async function loadHeroRate() {
   const heroRate = document.getElementById('hero-rate');
   try {
     const { clientRate } = await getClientRate('RWF');
+    const suffix = `${withFlag('RWF')} per ${withFlag('USDT')}`;
     if (!heroRateLoadedOnce) {
       heroRateLoadedOnce = true;
-      await countUp(heroRate, clientRate, 'RWF per USDT');
+      await countUp(heroRate, clientRate, suffix);
     } else {
-      heroRate.textContent = `Today: ~${fmt(clientRate)} RWF per USDT`;
+      heroRate.textContent = `Today: ~${fmt(clientRate)} ${suffix}`;
       flash(heroRate);
     }
   } catch {
