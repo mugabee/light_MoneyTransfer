@@ -89,10 +89,19 @@ async function runConversion() {
 
     resultOutput.textContent = fmt(result);
     converterRateEl.textContent = rateLine;
+    flash(resultOutput);
   } catch {
     resultOutput.textContent = '—';
     converterRateEl.textContent = "Live rate unavailable right now — message us for today's price.";
   }
+}
+
+function flash(el) {
+  el.classList.remove('flash');
+  // force reflow so the animation restarts even on rapid updates
+  void el.offsetWidth;
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 600);
 }
 
 amountInput.addEventListener('input', runConversion);
@@ -112,18 +121,87 @@ runConversion();
 setInterval(runConversion, 60_000);
 
 // Hero banner: quick USDT -> default fiat glance
+let heroRateLoadedOnce = false;
+
 async function loadHeroRate() {
   const heroRate = document.getElementById('hero-rate');
   try {
     const { clientRate } = await getClientRate('RWF');
-    heroRate.textContent = `Today: ~${fmt(clientRate)} RWF per USDT`;
+    if (!heroRateLoadedOnce) {
+      heroRateLoadedOnce = true;
+      await countUp(heroRate, clientRate, 'RWF per USDT');
+    } else {
+      heroRate.textContent = `Today: ~${fmt(clientRate)} RWF per USDT`;
+      flash(heroRate);
+    }
   } catch {
     heroRate.textContent = "Rate updating — message us for today's exact price";
   }
 }
 
+// Animate the hero rate counting up from 0 on first load.
+function countUp(el, target, suffix) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = `Today: ~${fmt(target)} ${suffix}`;
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const duration = 900;
+    const start = performance.now();
+
+    // Safety net: if rAF never fires (backgrounded tab, throttled browser),
+    // don't leave the rate stuck on "Loading…" forever.
+    const fallback = setTimeout(() => {
+      el.textContent = `Today: ~${fmt(target)} ${suffix}`;
+      resolve();
+    }, duration + 500);
+
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = `Today: ~${fmt(target * eased)} ${suffix}`;
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        clearTimeout(fallback);
+        resolve();
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
 loadHeroRate();
 setInterval(loadHeroRate, 60_000);
+
+// Scroll-driven chrome: progress bar, header shadow, subtle background parallax
+const scrollProgress = document.getElementById('scroll-progress');
+const siteHeader = document.getElementById('site-header');
+const bgFx = document.getElementById('bg-fx');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Timeout-based throttle rather than rAF-only, so this keeps working even in
+// contexts where rAF is heavily throttled or never fires (backgrounded tabs).
+let ticking = false;
+function onScroll() {
+  if (ticking) return;
+  ticking = true;
+  setTimeout(() => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+
+    if (scrollProgress) scrollProgress.style.width = `${progress}%`;
+    if (siteHeader) siteHeader.classList.toggle('scrolled', scrollTop > 8);
+    if (bgFx && !reduceMotion) bgFx.style.transform = `translateY(${scrollTop * 0.08}px)`;
+
+    ticking = false;
+  }, 16);
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
 
 // Reveal sections as they scroll into view
 const revealTargets = document.querySelectorAll('[data-reveal]');
