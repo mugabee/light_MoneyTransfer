@@ -33,17 +33,34 @@
 
 <main>
   <section class="hero">
-    <video
-      class="hero-video"
-      id="hero-video"
-      autoplay
-      muted
-      loop
-      playsinline
-      aria-hidden="true"
-    >
-      <source src="/hero-bg.mp4" type="video/mp4" />
-    </video>
+    <div class="hero-network" aria-hidden="true">
+      <div class="network-glow"></div>
+      <div class="network-rings">
+        <span class="ring ring-1"></span>
+        <span class="ring ring-2"></span>
+        <span class="ring ring-3"></span>
+      </div>
+      <div class="network-orbit">
+        <div class="spoke" style="--angle: 0deg"></div>
+        <div class="spoke" style="--angle: 45deg"></div>
+        <div class="spoke" style="--angle: 90deg"></div>
+        <div class="spoke" style="--angle: 135deg"></div>
+        <div class="spoke" style="--angle: 180deg"></div>
+        <div class="spoke" style="--angle: 225deg"></div>
+        <div class="spoke" style="--angle: 270deg"></div>
+        <div class="spoke" style="--angle: 315deg"></div>
+
+        <div class="node" style="--angle: 0deg"><span class="node-dot"></span><span class="node-label">RWF</span></div>
+        <div class="node" style="--angle: 45deg"><span class="node-dot"></span><span class="node-label">UGX</span></div>
+        <div class="node" style="--angle: 90deg"><span class="node-dot"></span><span class="node-label">USDT</span></div>
+        <div class="node" style="--angle: 135deg"><span class="node-dot"></span><span class="node-label">KES</span></div>
+        <div class="node" style="--angle: 180deg"><span class="node-dot"></span><span class="node-label">EUR</span></div>
+        <div class="node" style="--angle: 225deg"><span class="node-dot"></span><span class="node-label">TZS</span></div>
+        <div class="node" style="--angle: 270deg"><span class="node-dot"></span><span class="node-label">USD</span></div>
+        <div class="node" style="--angle: 315deg"><span class="node-dot"></span><span class="node-label">ZAR</span></div>
+      </div>
+      <div class="network-pulse"></div>
+    </div>
     <div class="hero-scrim" aria-hidden="true"></div>
 
     <div class="hero-content">
