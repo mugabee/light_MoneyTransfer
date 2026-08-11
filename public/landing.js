@@ -13,6 +13,19 @@ function fmt(n) {
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+// Respect reduced-motion preference; also handles browsers that block autoplay.
+const heroVideo = document.getElementById('hero-video');
+if (heroVideo) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    heroVideo.pause();
+    heroVideo.removeAttribute('autoplay');
+  } else {
+    heroVideo.play().catch(() => {
+      // Autoplay blocked — the static first frame plus scrim still reads fine.
+    });
+  }
+}
+
 // Fiat currencies offered on the converter. Add/remove as you support more markets.
 const FIAT_CURRENCIES = [
   { code: 'RWF', label: 'RWF — Rwandan Franc' },
