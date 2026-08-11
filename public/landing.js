@@ -15,12 +15,12 @@ function fmt(n) {
 
 // Fiat currencies offered on the converter. Add/remove as you support more markets.
 const FIAT_CURRENCIES = [
-  { code: 'RWF', label: 'RWF — Rwandan Franc' },
-  { code: 'UGX', label: 'UGX — Ugandan Shilling' },
-  { code: 'KES', label: 'KES — Kenyan Shilling' },
-  { code: 'TZS', label: 'TZS — Tanzanian Shilling' },
+  { code: 'RWF', label: '🇷🇼 RWF — Rwandan Franc' },
+  { code: 'UGX', label: '🇺🇬 UGX — Ugandan Shilling' },
+  { code: 'KES', label: '🇰🇪 KES — Kenyan Shilling' },
+  { code: 'TZS', label: '🇹🇿 TZS — Tanzanian Shilling' },
 ];
-const USDT = { code: 'USDT', label: 'USDT — Tether' };
+const USDT = { code: 'USDT', label: '🪙 USDT — Tether' };
 const ALL_CURRENCIES = [USDT, ...FIAT_CURRENCIES];
 
 const rateCache = new Map(); // fiat code -> { clientRate, mid, fetchedAt }

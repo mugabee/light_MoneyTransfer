@@ -6,14 +6,14 @@
    ============================================================ */
 
 .landing {
-  --bg: #05060a;
-  --panel: rgba(20, 18, 14, 0.55);
-  --panel-solid: #14120e;
-  --border: rgba(245, 178, 66, 0.16);
-  --text: #f5f1e8;
-  --muted: #a8a396;
+  --bg: #0b0a08;
+  --panel: rgba(38, 33, 24, 0.68);
+  --panel-solid: #211c14;
+  --border: rgba(245, 178, 66, 0.24);
+  --text: #f7f3ea;
+  --muted: #beb8a8;
   --accent: #f5b942;
-  --accent-dim: rgba(245, 178, 66, 0.12);
+  --accent-dim: rgba(245, 178, 66, 0.16);
   --accent-2: #22d3ee;
   --accent-3: #34d399;
   --danger: #f87171;
@@ -62,7 +62,7 @@
   height: 55vmax;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.16;
+  opacity: 0.26;
   animation: drift 26s ease-in-out infinite alternate;
 }
 
