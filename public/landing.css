@@ -843,6 +843,21 @@ main { position: relative; z-index: 1; }
 
 .board-section { text-align: center; }
 
+.board-base-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.board-base-picker .currency-select-wrap {
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
 .board-wrap {
   background: var(--panel);
   backdrop-filter: blur(16px);

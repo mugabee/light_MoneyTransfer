@@ -450,15 +450,23 @@
 
   <section id="board" class="section board-section" data-reveal>
     <h2>Today's rates board</h2>
-    <p class="section-sub">All rates quoted against RWF — just like a forex bureau board.</p>
+    <p class="section-sub">Just like a forex bureau board — pick a currency to compare against.</p>
+
+    <div class="board-base-picker">
+      <span class="converter-label">Compare against</span>
+      <div class="currency-select-wrap">
+        <svg class="flag-icon" id="board-base-flag"><use href="#flag-rw"/></svg>
+        <select id="board-base"></select>
+      </div>
+    </div>
 
     <div class="board-wrap">
       <table class="board-table" id="board-table">
         <thead>
           <tr>
             <th>Currency</th>
-            <th>We buy</th>
-            <th>We sell</th>
+            <th id="board-buy-head">We buy</th>
+            <th id="board-sell-head">We sell</th>
           </tr>
         </thead>
         <tbody id="board-tbody">
@@ -467,7 +475,7 @@
       </table>
     </div>
 
-    <p class="rate-note">"We buy" is what you receive in RWF when you sell us that currency. "We sell" is what you pay in RWF to buy that currency from us.</p>
+    <p class="rate-note" id="board-note">"We buy" is what you receive in RWF when you sell us that currency. "We sell" is what you pay in RWF to buy that currency from us.</p>
   </section>
 
   <section id="faq" class="section" data-reveal>

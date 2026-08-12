@@ -13,6 +13,17 @@ function fmt(n) {
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+// For quoted rates (as opposed to money amounts) a fixed 2 decimals rounds
+// small cross-rates to "0" — e.g. 1 RWF in USD is ~0.0007. Scale precision
+// up as the value gets smaller so it never collapses to zero.
+function fmtRate(n) {
+  const num = Number(n);
+  if (num === 0) return '0';
+  const abs = Math.abs(num);
+  const digits = abs < 0.001 ? 8 : abs < 0.01 ? 6 : abs < 1 ? 4 : 2;
+  return num.toLocaleString(undefined, { maximumFractionDigits: digits });
+}
+
 // Fiat currencies offered on the converter. Add/remove as you support more markets.
 // Native <select><option> elements can't render images/SVG (a browser
 // limitation, not fixable with CSS), so these stay plain text — the SVG flag
@@ -135,17 +146,17 @@ async function runConversion() {
     if (have === 'USDT' && want !== 'USDT') {
       const { clientRate } = await getClientRate(want);
       result = amount * clientRate;
-      rateLine = `1 ${withFlag('USDT')} ≈ ${fmt(clientRate)} ${withFlag(want)}`;
+      rateLine = `1 ${withFlag('USDT')} ≈ ${fmtRate(clientRate)} ${withFlag(want)}`;
     } else if (have !== 'USDT' && want === 'USDT') {
       const { clientRate } = await getClientRate(have);
       result = clientRate > 0 ? amount / clientRate : 0;
-      rateLine = `1 ${withFlag('USDT')} ≈ ${fmt(clientRate)} ${withFlag(have)}`;
+      rateLine = `1 ${withFlag('USDT')} ≈ ${fmtRate(clientRate)} ${withFlag(have)}`;
     } else {
       // fiat -> fiat, routed through USDT
       const [haveRate, wantRate] = await Promise.all([getClientRate(have), getClientRate(want)]);
       const usdtAmount = haveRate.clientRate > 0 ? amount / haveRate.clientRate : 0;
       result = usdtAmount * wantRate.clientRate;
-      rateLine = `1 ${withFlag(have)} ≈ ${fmt(wantRate.clientRate / haveRate.clientRate)} ${withFlag(want)}`;
+      rateLine = `1 ${withFlag(have)} ≈ ${fmtRate(wantRate.clientRate / haveRate.clientRate)} ${withFlag(want)}`;
     }
 
     resultOutput.textContent = fmt(result);
@@ -252,35 +263,65 @@ function countUp(el, target, suffix) {
 loadHeroRate();
 setInterval(loadHeroRate, 60_000);
 
-// Rates board: forex-bureau-style buy/sell table, quoted against RWF.
-// USD listed first since RWF and USD are the primary currencies at launch.
-const BOARD_CURRENCIES = [
-  'USD', 'UGX', 'KES', 'TZS', 'ZAR', 'NGN', 'GHS',
+// Rates board: forex-bureau-style buy/sell table. Defaults to RWF (the
+// launch market) but the client can pick any currency to compare against.
+const BOARD_ORDER = [
+  'USDT', 'USD', 'RWF', 'UGX', 'KES', 'TZS', 'ZAR', 'NGN', 'GHS',
   'EUR', 'GBP', 'INR', 'CNY', 'AED', 'CAD', 'AUD',
 ];
 const boardTbody = document.getElementById('board-tbody');
+const boardBaseSelect = document.getElementById('board-base');
+const boardBaseFlag = document.getElementById('board-base-flag');
+const boardBuyHead = document.getElementById('board-buy-head');
+const boardSellHead = document.getElementById('board-sell-head');
+const boardNote = document.getElementById('board-note');
+
+if (boardBaseSelect) {
+  populateSelect(boardBaseSelect, 'RWF');
+}
+
+// /api/rates/p2p?fiat=X returns the price of 1 USDT in X, not a rate against
+// any other currency. USDT itself never goes through that endpoint (it's the
+// bridge asset, not a fiat code Binance P2P recognizes) so its "mid" is 1 by
+// definition — 1 USDT always equals 1 USDT.
+async function getMidInfo(code) {
+  if (code === 'USDT') return { mid: 1, margin: null };
+  return getClientRate(code);
+}
 
 async function loadRatesBoard() {
   if (!boardTbody) return;
+  const baseCode = boardBaseSelect ? boardBaseSelect.value : 'RWF';
 
-  // /api/rates/p2p?fiat=X returns the price of 1 USDT in X — not a rate
-  // against RWF. Bridge every currency through USDT's raw mid price, then
-  // apply our margin once on the resulting RWF cross rate (applying it
-  // separately on each leg would double-count the spread).
-  let rwf;
+  if (boardBuyHead) boardBuyHead.textContent = `We buy (${baseCode})`;
+  if (boardSellHead) boardSellHead.textContent = `We sell (${baseCode})`;
+  if (boardNote) {
+    boardNote.innerHTML = `"We buy" is what you receive in ${withFlag(
+      baseCode
+    )} when you sell us that currency. "We sell" is what you pay in ${withFlag(
+      baseCode
+    )} to buy that currency from us.`;
+  }
+
+  let base;
   try {
-    rwf = await getClientRate('RWF');
+    base = await getMidInfo(baseCode);
   } catch {
     boardTbody.innerHTML = `<tr><td colspan="3" class="board-unavailable">Rates unavailable right now</td></tr>`;
     return;
   }
 
+  const rowCodes = BOARD_ORDER.filter((code) => code !== baseCode);
+
   const rows = await Promise.all(
-    BOARD_CURRENCIES.map(async (code) => {
+    rowCodes.map(async (code) => {
       try {
-        const x = await getClientRate(code);
-        const crossMid = rwf.mid / x.mid; // RWF per 1 unit of `code`
-        const margin = rwf.margin ?? 2;
+        const x = await getMidInfo(code);
+        // Bridge through USDT's raw mid price, then apply our margin once
+        // on the resulting cross rate — applying it on each leg separately
+        // would double-count the spread.
+        const crossMid = base.mid / x.mid; // units of `baseCode` per 1 `code`
+        const margin = x.margin ?? base.margin ?? 2;
         const buyRate = crossMid * (1 - margin / 100);
         const sellRate = crossMid * (1 + margin / 100);
         return { code, buyRate, sellRate, ok: true };
@@ -295,8 +336,8 @@ async function loadRatesBoard() {
       r.ok
         ? `<tr>
              <td class="board-currency">${withFlag(r.code)}</td>
-             <td>${fmt(r.buyRate)} RWF</td>
-             <td>${fmt(r.sellRate)} RWF</td>
+             <td>${fmtRate(r.buyRate)}</td>
+             <td>${fmtRate(r.sellRate)}</td>
            </tr>`
         : `<tr>
              <td class="board-currency">${withFlag(r.code)}</td>
@@ -304,6 +345,13 @@ async function loadRatesBoard() {
            </tr>`
     )
     .join('');
+}
+
+if (boardBaseSelect) {
+  boardBaseSelect.addEventListener('change', () => {
+    syncFlag(boardBaseSelect, boardBaseFlag);
+    loadRatesBoard();
+  });
 }
 
 loadRatesBoard();
