@@ -4,6 +4,11 @@ const router = express.Router();
 
 const P2P_URL = 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search';
 
+// Only quote off advertisers actually holding enough USDT to fill a
+// meaningful trade. A thin ad with a great headline price but only a few
+// dollars of surplusAmount isn't a rate anyone could actually transact at.
+const MIN_VOLUME_USDT = Number(process.env.RATE_MIN_VOLUME_USDT || 700);
+
 // Simple in-memory cache so a page full of widgets doesn't hammer Binance.
 const cache = new Map(); // fiat -> { data, fetchedAt }
 const CACHE_TTL_MS = 30_000;
@@ -17,7 +22,7 @@ async function fetchSide(fiat, tradeType) {
       fiat,
       tradeType, // 'BUY' or 'SELL'
       page: 1,
-      rows: 5,
+      rows: 20, // wider pool so filtering by volume still leaves candidates
       payTypes: [],
       publisherType: null,
     }),
@@ -33,7 +38,14 @@ async function fetchSide(fiat, tradeType) {
     throw new Error('No P2P adverts returned for this fiat/side');
   }
 
-  return adverts.map((a) => Number(a.adv.price)).filter((p) => Number.isFinite(p));
+  const wellFunded = adverts.filter(
+    (a) => Number(a.adv.surplusAmount) >= MIN_VOLUME_USDT
+  );
+  // Fall back to the full pool if nobody in this market currently holds
+  // that much — better to quote a real (thinner) rate than to error out.
+  const pool = wellFunded.length ? wellFunded : adverts;
+
+  return pool.map((a) => Number(a.adv.price)).filter((p) => Number.isFinite(p));
 }
 
 async function getP2pSummary(fiat) {
