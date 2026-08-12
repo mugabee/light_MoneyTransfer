@@ -5,6 +5,15 @@
    terminal theme defined in style.css.
    ============================================================ */
 
+.flag-icon {
+  width: 1.1em;
+  height: 0.75em;
+  vertical-align: -0.05em;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
 .landing {
   --bg: #0b0a08;
   --panel: rgba(38, 33, 24, 0.68);

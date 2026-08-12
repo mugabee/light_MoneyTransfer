@@ -14,29 +14,35 @@ function fmt(n) {
 }
 
 // Fiat currencies offered on the converter. Add/remove as you support more markets.
+// Native <select><option> elements can't render images/SVG (a browser
+// limitation, not fixable with CSS), so these stay plain text — the SVG flag
+// icons are used everywhere else (ticker, orbit nodes, rate text).
 const FIAT_CURRENCIES = [
-  { code: 'RWF', label: '🇷🇼 RWF — Rwandan Franc' },
-  { code: 'UGX', label: '🇺🇬 UGX — Ugandan Shilling' },
-  { code: 'KES', label: '🇰🇪 KES — Kenyan Shilling' },
-  { code: 'TZS', label: '🇹🇿 TZS — Tanzanian Shilling' },
+  { code: 'RWF', label: 'RWF — Rwandan Franc' },
+  { code: 'UGX', label: 'UGX — Ugandan Shilling' },
+  { code: 'KES', label: 'KES — Kenyan Shilling' },
+  { code: 'TZS', label: 'TZS — Tanzanian Shilling' },
 ];
-const USDT = { code: 'USDT', label: '🪙 USDT — Tether' };
+const USDT = { code: 'USDT', label: 'USDT — Tether' };
 const ALL_CURRENCIES = [USDT, ...FIAT_CURRENCIES];
 
-const FLAGS = {
-  USDT: '🪙',
-  RWF: '🇷🇼',
-  UGX: '🇺🇬',
-  KES: '🇰🇪',
-  TZS: '🇹🇿',
-  EUR: '🇪🇺',
-  USD: '🇺🇸',
-  ZAR: '🇿🇦',
+// Maps a currency code to its <symbol> id in the inline SVG sprite at the
+// top of index.html.
+const FLAG_SYMBOLS = {
+  USDT: 'flag-usdt',
+  RWF: 'flag-rw',
+  UGX: 'flag-ug',
+  KES: 'flag-ke',
+  TZS: 'flag-tz',
+  EUR: 'flag-eu',
+  USD: 'flag-us',
+  ZAR: 'flag-za',
 };
 
 function withFlag(code) {
-  const flag = FLAGS[code];
-  return flag ? `${flag} ${code}` : code;
+  const symbol = FLAG_SYMBOLS[code];
+  const icon = symbol ? `<svg class="flag-icon"><use href="#${symbol}"/></svg> ` : '';
+  return `${icon}${code}`;
 }
 
 const rateCache = new Map(); // fiat code -> { clientRate, mid, fetchedAt }
@@ -77,11 +83,11 @@ async function runConversion() {
 
   if (have === want) {
     resultOutput.textContent = fmt(amount);
-    converterRateEl.textContent = 'Pick two different currencies to see a rate.';
+    converterRateEl.innerHTML = 'Pick two different currencies to see a rate.';
     return;
   }
 
-  converterRateEl.textContent = 'Fetching live rate…';
+  converterRateEl.innerHTML = 'Fetching live rate…';
 
   try {
     let result;
@@ -104,11 +110,11 @@ async function runConversion() {
     }
 
     resultOutput.textContent = fmt(result);
-    converterRateEl.textContent = rateLine;
+    converterRateEl.innerHTML = rateLine;
     flash(resultOutput);
   } catch {
     resultOutput.textContent = '—';
-    converterRateEl.textContent = "Live rate unavailable right now — message us for today's price.";
+    converterRateEl.innerHTML = "Live rate unavailable right now — message us for today's price.";
   }
 }
 
@@ -148,18 +154,18 @@ async function loadHeroRate() {
       heroRateLoadedOnce = true;
       await countUp(heroRate, clientRate, suffix);
     } else {
-      heroRate.textContent = `Today: ~${fmt(clientRate)} ${suffix}`;
+      heroRate.innerHTML = `Today: ~${fmt(clientRate)} ${suffix}`;
       flash(heroRate);
     }
   } catch {
-    heroRate.textContent = "Rate updating — message us for today's exact price";
+    heroRate.innerHTML = "Rate updating — message us for today's exact price";
   }
 }
 
 // Animate the hero rate counting up from 0 on first load.
 function countUp(el, target, suffix) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    el.textContent = `Today: ~${fmt(target)} ${suffix}`;
+    el.innerHTML = `Today: ~${fmt(target)} ${suffix}`;
     return Promise.resolve();
   }
 
@@ -170,14 +176,14 @@ function countUp(el, target, suffix) {
     // Safety net: if rAF never fires (backgrounded tab, throttled browser),
     // don't leave the rate stuck on "Loading…" forever.
     const fallback = setTimeout(() => {
-      el.textContent = `Today: ~${fmt(target)} ${suffix}`;
+      el.innerHTML = `Today: ~${fmt(target)} ${suffix}`;
       resolve();
     }, duration + 500);
 
     function tick(now) {
       const progress = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = `Today: ~${fmt(target * eased)} ${suffix}`;
+      el.innerHTML = `Today: ~${fmt(target * eased)} ${suffix}`;
       if (progress < 1) {
         requestAnimationFrame(tick);
       } else {
