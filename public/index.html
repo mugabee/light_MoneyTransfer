@@ -253,7 +253,8 @@
     <a href="/" class="brand-link">Ledger</a>
     <nav class="site-nav">
       <a href="#how-it-works">How it works</a>
-      <a href="#rates">Rates</a>
+      <a href="#rates">Convert</a>
+      <a href="#board">Rates board</a>
       <a href="#faq">FAQ</a>
       <a href="#contact" class="btn small">Get started</a>
     </nav>
@@ -425,6 +426,28 @@
     </div>
 
     <p class="rate-note">Rates are based on live market prices and update continuously. Final rate is confirmed at the time of your transfer.</p>
+  </section>
+
+  <section id="board" class="section board-section" data-reveal>
+    <h2>Today's rates board</h2>
+    <p class="section-sub">All rates quoted against RWF — just like a forex bureau board.</p>
+
+    <div class="board-wrap">
+      <table class="board-table" id="board-table">
+        <thead>
+          <tr>
+            <th>Currency</th>
+            <th>We buy</th>
+            <th>We sell</th>
+          </tr>
+        </thead>
+        <tbody id="board-tbody">
+          <tr><td colspan="3" class="board-loading">Loading live rates…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="rate-note">"We buy" is what you receive in RWF when you sell us that currency. "We sell" is what you pay in RWF to buy that currency from us.</p>
   </section>
 
   <section id="faq" class="section" data-reveal>

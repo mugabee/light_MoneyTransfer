@@ -64,7 +64,7 @@ function withFlag(code) {
   return `${icon}${code}`;
 }
 
-const rateCache = new Map(); // fiat code -> { clientRate, mid, fetchedAt }
+const rateCache = new Map(); // fiat code -> { clientRate, buyRate, sellRate, mid, fetchedAt }
 const RATE_TTL_MS = 60_000;
 
 async function getClientRate(fiatCode) {
@@ -74,7 +74,14 @@ async function getClientRate(fiatCode) {
   const res = await fetch(`/api/rates/p2p?fiat=${fiatCode}`);
   if (!res.ok) throw new Error('rate unavailable');
   const data = await res.json();
-  const entry = { clientRate: data.clientRate, mid: data.mid, fetchedAt: Date.now() };
+  const entry = {
+    clientRate: data.clientRate,
+    buyRate: data.buyRate,
+    sellRate: data.sellRate,
+    mid: data.mid,
+    margin: data.margin,
+    fetchedAt: Date.now(),
+  };
   rateCache.set(fiatCode, entry);
   return entry;
 }
@@ -216,6 +223,63 @@ function countUp(el, target, suffix) {
 
 loadHeroRate();
 setInterval(loadHeroRate, 60_000);
+
+// Rates board: forex-bureau-style buy/sell table, quoted against RWF.
+// USD listed first since RWF and USD are the primary currencies at launch.
+const BOARD_CURRENCIES = [
+  'USD', 'UGX', 'KES', 'TZS', 'ZAR', 'NGN', 'GHS',
+  'EUR', 'GBP', 'INR', 'CNY', 'AED', 'CAD', 'AUD',
+];
+const boardTbody = document.getElementById('board-tbody');
+
+async function loadRatesBoard() {
+  if (!boardTbody) return;
+
+  // /api/rates/p2p?fiat=X returns the price of 1 USDT in X — not a rate
+  // against RWF. Bridge every currency through USDT's raw mid price, then
+  // apply our margin once on the resulting RWF cross rate (applying it
+  // separately on each leg would double-count the spread).
+  let rwf;
+  try {
+    rwf = await getClientRate('RWF');
+  } catch {
+    boardTbody.innerHTML = `<tr><td colspan="3" class="board-unavailable">Rates unavailable right now</td></tr>`;
+    return;
+  }
+
+  const rows = await Promise.all(
+    BOARD_CURRENCIES.map(async (code) => {
+      try {
+        const x = await getClientRate(code);
+        const crossMid = rwf.mid / x.mid; // RWF per 1 unit of `code`
+        const margin = rwf.margin ?? 2;
+        const buyRate = crossMid * (1 - margin / 100);
+        const sellRate = crossMid * (1 + margin / 100);
+        return { code, buyRate, sellRate, ok: true };
+      } catch {
+        return { code, ok: false };
+      }
+    })
+  );
+
+  boardTbody.innerHTML = rows
+    .map((r) =>
+      r.ok
+        ? `<tr>
+             <td class="board-currency">${withFlag(r.code)}</td>
+             <td>${fmt(r.buyRate)} RWF</td>
+             <td>${fmt(r.sellRate)} RWF</td>
+           </tr>`
+        : `<tr>
+             <td class="board-currency">${withFlag(r.code)}</td>
+             <td colspan="2" class="board-unavailable">Rate unavailable</td>
+           </tr>`
+    )
+    .join('');
+}
+
+loadRatesBoard();
+setInterval(loadRatesBoard, 60_000);
 
 // Scroll-driven chrome: progress bar, header shadow, subtle background parallax
 const scrollProgress = document.getElementById('scroll-progress');

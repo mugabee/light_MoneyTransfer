@@ -65,7 +65,12 @@ router.get('/p2p', async (req, res) => {
 
   try {
     const summary = await getP2pSummary(fiat);
-    res.json({ ...summary, margin, clientRate: summary.mid * (1 - margin / 100) });
+    // clientRate/buyRate: what we pay when a customer sells us this currency.
+    // sellRate: what a customer pays when buying this currency from us.
+    // Symmetric spread around the market mid, sized by RATE_MARGIN_PERCENT.
+    const buyRate = summary.mid * (1 - margin / 100);
+    const sellRate = summary.mid * (1 + margin / 100);
+    res.json({ ...summary, margin, clientRate: buyRate, buyRate, sellRate });
   } catch (err) {
     // Binance's internal endpoint is undocumented and can change shape
     // without notice — fail clearly instead of crashing the process.
