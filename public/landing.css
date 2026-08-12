@@ -770,6 +770,15 @@ main { position: relative; z-index: 1; }
 
 .currency-select-wrap select:focus { outline: none; }
 
+/* The <select> itself can pick up the dark background from its wrapper,
+   but the native dropdown popup renders independently of that context —
+   without this, browsers fall back to a white popup with our light text
+   color still applied, making every option unreadable. */
+.currency-select-wrap select option {
+  background: var(--panel-solid);
+  color: var(--text);
+}
+
 .converter-swap-wrap {
   position: relative;
   height: 0;
