@@ -402,27 +402,47 @@
     <p class="section-sub">Choose your currency and see what you'll get, live.</p>
 
     <div class="converter" id="converter">
-      <div class="converter-row">
-        <label class="converter-field">
-          <span class="converter-label">You have</span>
-          <div class="converter-input-group">
-            <input type="number" id="amount-input" inputmode="decimal" placeholder="0" min="0" step="any" />
+      <div class="converter-card">
+        <div class="converter-card-head">
+          <span class="converter-label">You send</span>
+          <div class="chip-row">
+            <button type="button" class="chip" data-amount="50">50</button>
+            <button type="button" class="chip" data-amount="100">100</button>
+            <button type="button" class="chip" data-amount="500">500</button>
+            <button type="button" class="chip" data-amount="1000">1,000</button>
+          </div>
+        </div>
+        <div class="converter-input-group">
+          <input type="number" id="amount-input" inputmode="decimal" placeholder="0" min="0" step="any" />
+          <div class="currency-select-wrap">
+            <svg class="flag-icon" id="have-flag"><use href="#flag-usdt"/></svg>
             <select id="have-currency"></select>
           </div>
-        </label>
-
-        <button type="button" id="swap-btn" class="swap-btn" title="Swap" aria-label="Swap currencies">⇄</button>
-
-        <label class="converter-field">
-          <span class="converter-label">You get</span>
-          <div class="converter-input-group">
-            <output id="result-output">0</output>
-            <select id="want-currency"></select>
-          </div>
-        </label>
+        </div>
       </div>
 
-      <p class="converter-rate" id="converter-rate">Loading live rate…</p>
+      <div class="converter-swap-wrap">
+        <div class="converter-swap-line"></div>
+        <button type="button" id="swap-btn" class="swap-btn" title="Swap" aria-label="Swap currencies">⇅</button>
+      </div>
+
+      <div class="converter-card">
+        <div class="converter-card-head">
+          <span class="converter-label">Recipient gets</span>
+        </div>
+        <div class="converter-input-group">
+          <output id="result-output">0</output>
+          <div class="currency-select-wrap">
+            <svg class="flag-icon" id="want-flag"><use href="#flag-rw"/></svg>
+            <select id="want-currency"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="converter-rate-banner">
+        <span class="pulse-dot"></span>
+        <p class="converter-rate" id="converter-rate">Loading live rate…</p>
+      </div>
     </div>
 
     <p class="rate-note">Rates are based on live market prices and update continuously. Final rate is confirmed at the time of your transfer.</p>

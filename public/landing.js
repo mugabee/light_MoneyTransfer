@@ -88,6 +88,8 @@ async function getClientRate(fiatCode) {
 
 const haveSelect = document.getElementById('have-currency');
 const wantSelect = document.getElementById('want-currency');
+const haveFlag = document.getElementById('have-flag');
+const wantFlag = document.getElementById('want-flag');
 const amountInput = document.getElementById('amount-input');
 const resultOutput = document.getElementById('result-output');
 const converterRateEl = document.getElementById('converter-rate');
@@ -101,6 +103,17 @@ function populateSelect(select, defaultCode) {
 
 populateSelect(haveSelect, 'USDT');
 populateSelect(wantSelect, 'RWF');
+
+// The <select> itself can't show a flag (native option elements are
+// text-only), so a separate <svg><use> icon next to it tracks the
+// current selection instead.
+function syncFlag(select, iconEl) {
+  const symbol = FLAG_SYMBOLS[select.value];
+  if (symbol && iconEl) iconEl.querySelector('use').setAttribute('href', `#${symbol}`);
+}
+
+syncFlag(haveSelect, haveFlag);
+syncFlag(wantSelect, wantFlag);
 
 async function runConversion() {
   const have = haveSelect.value;
@@ -153,15 +166,30 @@ function flash(el) {
 }
 
 amountInput.addEventListener('input', runConversion);
-haveSelect.addEventListener('change', runConversion);
-wantSelect.addEventListener('change', runConversion);
+haveSelect.addEventListener('change', () => {
+  syncFlag(haveSelect, haveFlag);
+  runConversion();
+});
+wantSelect.addEventListener('change', () => {
+  syncFlag(wantSelect, wantFlag);
+  runConversion();
+});
 
 swapBtn.addEventListener('click', () => {
   const temp = haveSelect.value;
   haveSelect.value = wantSelect.value;
   wantSelect.value = temp;
+  syncFlag(haveSelect, haveFlag);
+  syncFlag(wantSelect, wantFlag);
   runConversion();
   swapBtn.classList.toggle('spin');
+});
+
+document.querySelectorAll('.chip').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    amountInput.value = btn.dataset.amount;
+    runConversion();
+  });
 });
 
 amountInput.value = 100;
