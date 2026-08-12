@@ -135,10 +135,37 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
+// --- Rate settings ---
+const marginInput = document.getElementById('margin-input');
+const settingsStatus = document.getElementById('settings-status');
+
+async function loadSettings() {
+  const data = await api('/api/settings');
+  marginInput.value = data.rate_margin_percent;
+}
+
+document.getElementById('settings-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  settingsStatus.textContent = 'Saving…';
+  settingsStatus.classList.remove('error');
+  try {
+    await api('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ rate_margin_percent: Number(marginInput.value) }),
+    });
+    settingsStatus.textContent = 'Saved — live on the site now.';
+    setTimeout(() => { settingsStatus.textContent = ''; }, 3000);
+  } catch (err) {
+    settingsStatus.textContent = err.message || 'Failed to save';
+    settingsStatus.classList.add('error');
+  }
+});
+
 async function init() {
   await loadContacts();
   await loadTransactions();
   await loadRate();
+  await loadSettings();
   setInterval(loadRate, 60_000);
 }
 

@@ -8,6 +8,7 @@ const { requireAuth, requirePageAuth } = require('./middleware/auth');
 const authRouter = require('./routes/auth');
 const contactsRouter = require('./routes/contacts');
 const transactionsRouter = require('./routes/transactions');
+const settingsRouter = require('./routes/settings');
 const { router: ratesRouter } = require('./routes/rates');
 const whatsappRouter = require('./routes/whatsapp');
 
@@ -32,6 +33,7 @@ app.get('/dashboard.html', requirePageAuth, (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/contacts', requireAuth, contactsRouter);
 app.use('/api/transactions', requireAuth, transactionsRouter);
+app.use('/api/settings', requireAuth, settingsRouter);
 app.use('/api/rates', ratesRouter);
 app.use('/whatsapp', whatsappRouter);
 

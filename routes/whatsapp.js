@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool, logAudit } = require('../db');
-const { getP2pSummary } = require('./rates');
+const { getP2pSummary, getMarginPercent } = require('./rates');
 
 const router = express.Router();
 
@@ -37,11 +37,10 @@ async function sendWhatsAppMessage(to, body) {
 async function buildReply(text) {
   const lower = text.toLowerCase();
   const fiat = process.env.RATE_FIAT || 'RWF';
-  const margin = Number(process.env.RATE_MARGIN_PERCENT || 2);
 
   if (/\b(rate|price|today)\b/.test(lower)) {
     try {
-      const { mid } = await getP2pSummary(fiat);
+      const [{ mid }, margin] = await Promise.all([getP2pSummary(fiat), getMarginPercent()]);
       const clientRate = mid * (1 - margin / 100);
       return `Today's USDT to ${fiat} rate is ${clientRate.toFixed(2)} ${fiat} per USDT. Let us know how much you'd like to exchange.`;
     } catch {

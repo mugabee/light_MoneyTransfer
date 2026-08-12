@@ -83,6 +83,57 @@ body {
   letter-spacing: 0.05em;
 }
 
+@media (min-width: 900px) {
+  .panel-wide { grid-column: 1 / -1; }
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+}
+
+.settings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.settings-form input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--text);
+  font-family: inherit;
+  width: 140px;
+}
+
+.settings-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-status {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.settings-status.error {
+  color: var(--danger);
+}
+
 .btn {
   background: var(--accent);
   color: #05170a;

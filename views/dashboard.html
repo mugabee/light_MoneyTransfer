@@ -41,6 +41,25 @@
       <tbody></tbody>
     </table>
   </section>
+
+  <section class="panel panel-wide">
+    <div class="panel-header">
+      <h2>Rate settings</h2>
+    </div>
+    <form id="settings-form" class="settings-form">
+      <label>
+        Margin (%)
+        <input name="rate_margin_percent" id="margin-input" type="number" min="0" max="25" step="0.1" required />
+      </label>
+      <p class="settings-hint">
+        Applied on top of the live market mid price: you pay sellers <strong>mid − margin%</strong> and charge buyers <strong>mid + margin%</strong>. Takes effect immediately, site-wide — no redeploy needed.
+      </p>
+      <div class="settings-actions">
+        <button type="submit" class="btn">Save</button>
+        <span id="settings-status" class="settings-status"></span>
+      </div>
+    </form>
+  </section>
 </main>
 
 <dialog id="contact-dialog">

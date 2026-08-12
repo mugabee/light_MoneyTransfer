@@ -42,6 +42,12 @@ async function init() {
       details JSONB,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
 }
 
@@ -52,4 +58,20 @@ async function logAudit(entityType, entityId, action, details) {
   );
 }
 
-module.exports = { pool, init, logAudit };
+// Settings are admin-adjustable values (e.g. rate margin) that live in the
+// database instead of env vars, so changing them doesn't require a
+// redeploy. `fallback` covers the case where nobody has set it yet.
+async function getSetting(key, fallback) {
+  const { rows } = await pool.query('SELECT value FROM settings WHERE key = $1', [key]);
+  return rows[0] ? rows[0].value : fallback;
+}
+
+async function setSetting(key, value) {
+  await pool.query(
+    `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, now())
+     ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
+    [key, String(value)]
+  );
+}
+
+module.exports = { pool, init, logAudit, getSetting, setSetting };

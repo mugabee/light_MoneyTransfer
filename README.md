@@ -30,11 +30,13 @@ Most small money-transfer operations either rely on a spreadsheet and word-of-mo
 - Login-gated — `/dashboard.html` and all of `/api/contacts` and `/api/transactions` require an authenticated session (JWT in an httpOnly cookie); anyone else is redirected to `/login.html`
 - Contact management, tagged by channel (WhatsApp, Telegram, Instagram, Facebook, phone)
 - Full transaction history per contact
-- Every write — create, update, delete — recorded to an audit log
+- **Rate settings panel** — the admin adjusts the margin percentage live, from the browser, no redeploy or code change required
+- Every write — create, update, delete, settings changes — recorded to an audit log
 
 ### Rate engine
 - Live buy/sell/mid pricing sourced from real P2P market data, cached server-side
-- Margin-adjusted client rates computed once and shared consistently across the site, the WhatsApp bot, and the rates board — no drift between what different parts of the app quote
+- Only quotes off advertisers holding enough volume to fill a meaningful trade (configurable via `RATE_MIN_VOLUME_USDT`), so a thin ad with a great headline price can't skew the quoted rate
+- Margin lives in the database, not an env var — the admin sets it from the dashboard, and it applies immediately, everywhere: the site, the WhatsApp bot, and the rates board all read the same value, so there's no drift between what different parts of the app quote
 - Cross-currency rates computed properly through a common bridge asset, with precision that scales to the value of the currency (so a sub-cent rate never silently rounds to zero)
 
 ### WhatsApp integration (optional)
@@ -109,6 +111,7 @@ Render's free tier doesn't support persistent disks, which is why this runs on P
 | `/api/contacts/:id` | GET/PUT/DELETE | ✅ | Read / update / delete a contact |
 | `/api/transactions` | GET/POST | ✅ | List (optionally `?contact_id=`) / create transactions |
 | `/api/transactions/:id` | DELETE | ✅ | Delete a transaction |
+| `/api/settings` | GET/PUT | ✅ | Read / update the rate margin percentage |
 | `/api/rates/p2p?fiat=RWF` | GET | — | Live buy/sell/mid rate plus margin-adjusted client rate for USDT against the given currency |
 | `/whatsapp/webhook` | GET/POST | — | Meta verification handshake / incoming message handler |
 

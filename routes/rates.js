@@ -1,4 +1,5 @@
 const express = require('express');
+const { getSetting } = require('../db');
 
 const router = express.Router();
 
@@ -12,6 +13,22 @@ const MIN_VOLUME_USDT = Number(process.env.RATE_MIN_VOLUME_USDT || 700);
 // Simple in-memory cache so a page full of widgets doesn't hammer Binance.
 const cache = new Map(); // fiat -> { data, fetchedAt }
 const CACHE_TTL_MS = 30_000;
+
+// The margin is admin-adjustable from the dashboard (stored in the
+// database) rather than fixed in an env var, so changing it doesn't need a
+// redeploy. Cached briefly so every rate request doesn't hit the DB.
+let marginCache = null; // { value, fetchedAt }
+const MARGIN_CACHE_TTL_MS = 10_000;
+
+async function getMarginPercent() {
+  if (marginCache && Date.now() - marginCache.fetchedAt < MARGIN_CACHE_TTL_MS) {
+    return marginCache.value;
+  }
+  const stored = await getSetting('rate_margin_percent', process.env.RATE_MARGIN_PERCENT || '2');
+  const value = Number(stored);
+  marginCache = { value, fetchedAt: Date.now() };
+  return value;
+}
 
 async function fetchSide(fiat, tradeType) {
   const res = await fetch(P2P_URL, {
@@ -73,7 +90,7 @@ async function getP2pSummary(fiat) {
 
 router.get('/p2p', async (req, res) => {
   const fiat = (req.query.fiat || process.env.RATE_FIAT || 'RWF').toUpperCase();
-  const margin = Number(process.env.RATE_MARGIN_PERCENT || 2);
+  const margin = await getMarginPercent();
 
   try {
     const summary = await getP2pSummary(fiat);
@@ -93,4 +110,11 @@ router.get('/p2p', async (req, res) => {
   }
 });
 
-module.exports = { router, getP2pSummary };
+// Clears the cached margin immediately after an admin updates it, so the
+// change is reflected on the very next request instead of waiting out the
+// cache TTL.
+function invalidateMarginCache() {
+  marginCache = null;
+}
+
+module.exports = { router, getP2pSummary, getMarginPercent, invalidateMarginCache };
