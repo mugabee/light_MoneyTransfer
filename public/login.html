@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Staff Login</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="login.css" />
+</head>
+<body>
+<div class="login-wrap">
+  <form id="login-form" class="login-card">
+    <div class="login-brand">Ledger</div>
+    <p class="login-sub">Staff access only</p>
+
+    <label>Username
+      <input name="username" id="username" autocomplete="username" required autofocus />
+    </label>
+    <label>Password
+      <input name="password" id="password" type="password" autocomplete="current-password" required />
+    </label>
+
+    <p class="login-error" id="login-error" hidden></p>
+
+    <button type="submit" class="btn" id="login-btn">Log in</button>
+  </form>
+</div>
+
+<script src="login.js"></script>
+</body>
+</html>

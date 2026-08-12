@@ -33,6 +33,12 @@ body {
   letter-spacing: 0.02em;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .rate-widget {
   font-variant-numeric: tabular-nums;
   background: var(--accent-dim);

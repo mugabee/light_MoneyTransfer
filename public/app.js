@@ -9,6 +9,12 @@ async function api(path, options) {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   });
+  if (res.status === 401) {
+    // Session expired or was never valid — bounce to login rather than
+    // showing a broken dashboard full of failed requests.
+    window.location.href = '/login.html';
+    throw new Error('Not authenticated');
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
@@ -122,6 +128,11 @@ contactsTableBody.addEventListener('click', async (e) => {
   await api(`/api/contacts/${id}`, { method: 'DELETE' });
   await loadContacts();
   await loadTransactions();
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/login.html';
 });
 
 async function init() {

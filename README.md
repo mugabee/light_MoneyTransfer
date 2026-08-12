@@ -27,6 +27,7 @@ Most small money-transfer operations either rely on a spreadsheet and word-of-mo
 - FAQ, how-it-works, and direct WhatsApp/Telegram contact links
 
 ### Staff dashboard
+- Login-gated — `/dashboard.html` and all of `/api/contacts` and `/api/transactions` require an authenticated session (JWT in an httpOnly cookie); anyone else is redirected to `/login.html`
 - Contact management, tagged by channel (WhatsApp, Telegram, Instagram, Facebook, phone)
 - Full transaction history per contact
 - Every write — create, update, delete — recorded to an audit log
@@ -58,16 +59,29 @@ Requires a Postgres database. The free tier of [Neon](https://neon.tech) or [Sup
 ```bash
 npm install
 cp .env.example .env      # fill in DATABASE_URL, RATE_FIAT, RATE_MARGIN_PERCENT, and WhatsApp credentials if using that feature
+```
+
+Then set up admin login — generate a password hash locally (nothing is sent anywhere) and add it, along with a username and a random JWT secret, to `.env`:
+
+```bash
+node scripts/hash-password.js "your-chosen-password"
+# paste the printed ADMIN_PASSWORD_HASH line into .env, and set ADMIN_USERNAME
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+# paste the output into JWT_SECRET in .env
+```
+
+```bash
 npm start
 ```
 
 Tables are created automatically on startup if they don't already exist — no migration step.
 
 - Site: `http://localhost:3000`
-- Dashboard: `http://localhost:3000/dashboard.html`
+- Staff login: `http://localhost:3000/login.html`
+- Dashboard (requires login): `http://localhost:3000/dashboard.html`
 - WhatsApp webhook: `http://localhost:3000/whatsapp/webhook`
 
-The site, dashboard, and rate API work as soon as `DATABASE_URL` is set. WhatsApp auto-reply additionally requires:
+The site, dashboard, and rate API work as soon as `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `JWT_SECRET` are set. WhatsApp auto-reply additionally requires:
 
 1. A verified Meta Business account
 2. A WhatsApp Business phone number registered through Meta's dashboard → gives you `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`
@@ -78,32 +92,36 @@ The site, dashboard, and rate API work as soon as `DATABASE_URL` is set. WhatsAp
 Configured for [Render](https://render.com) via `render.yaml` — connect the repo, set `DATABASE_URL`, deploy. Every push to `main` redeploys automatically.
 
 1. Create a free Postgres database (Neon or Supabase) and copy its connection string
-2. Render → **New** → **Blueprint**, connect this repo
-3. When prompted for env vars, paste the connection string into `DATABASE_URL`, and set the WhatsApp vars if using that feature
+2. Generate an admin password hash locally: `node scripts/hash-password.js "your-chosen-password"`
+3. Render → **New** → **Blueprint**, connect this repo
+4. When prompted for env vars: paste the connection string into `DATABASE_URL`, choose an `ADMIN_USERNAME`, paste the hash from step 2 into `ADMIN_PASSWORD_HASH`, and set the WhatsApp vars if using that feature. `JWT_SECRET` is generated automatically by Render — no action needed.
 
 Render's free tier doesn't support persistent disks, which is why this runs on Postgres rather than a local file — a hosted database keeps data intact across every deploy and restart, at no cost.
 
 ## API reference
 
-| Route | Method | Description |
-|---|---|---|
-| `/api/contacts` | GET/POST | List / create contacts |
-| `/api/contacts/:id` | GET/PUT/DELETE | Read / update / delete a contact |
-| `/api/transactions` | GET/POST | List (optionally `?contact_id=`) / create transactions |
-| `/api/transactions/:id` | DELETE | Delete a transaction |
-| `/api/rates/p2p?fiat=RWF` | GET | Live buy/sell/mid rate plus margin-adjusted client rate for USDT against the given currency |
-| `/whatsapp/webhook` | GET/POST | Meta verification handshake / incoming message handler |
+| Route | Method | Auth | Description |
+|---|---|---|---|
+| `/api/auth/login` | POST | — | `{ username, password }` → sets the session cookie |
+| `/api/auth/logout` | POST | — | Clears the session cookie |
+| `/api/auth/me` | GET | — | Returns the current session's username, if any |
+| `/api/contacts` | GET/POST | ✅ | List / create contacts |
+| `/api/contacts/:id` | GET/PUT/DELETE | ✅ | Read / update / delete a contact |
+| `/api/transactions` | GET/POST | ✅ | List (optionally `?contact_id=`) / create transactions |
+| `/api/transactions/:id` | DELETE | ✅ | Delete a transaction |
+| `/api/rates/p2p?fiat=RWF` | GET | — | Live buy/sell/mid rate plus margin-adjusted client rate for USDT against the given currency |
+| `/whatsapp/webhook` | GET/POST | — | Meta verification handshake / incoming message handler |
 
 ## Known limitations & roadmap
 
 Being upfront about what's not built yet is part of shipping something real:
 
-- **No dashboard authentication yet** — treat it as trusted-access-only until login is added (next on the roadmap)
+- **Single admin account** — one username/password pair via env vars, not a multi-user system with roles. Fine for a one-operator business; would need a real users table to grow past that.
 - **No compliance layer built in** — money transfer and currency exchange are regulated activities in most jurisdictions (licensing, KYC/AML, reporting thresholds). That's a business decision for the operator, kept deliberately separate from the software.
 - **Upstream rate data isn't an official, documented API** — it can change shape without notice. The rate engine is written to fail gracefully rather than crash if that happens.
 
 **Planned next:**
-- Login/auth for the staff dashboard
+- Multi-user accounts with roles, for teams past a single operator
 - CSV export/backup for the database
 - Auto-post daily rates to a Telegram channel
 - WhatsApp message templates for business-initiated messages
