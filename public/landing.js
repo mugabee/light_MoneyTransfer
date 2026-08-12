@@ -13,6 +13,22 @@ function fmt(n) {
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+// Mobile hamburger menu
+const navToggle = document.getElementById('nav-toggle');
+const siteNav = document.getElementById('site-nav');
+if (navToggle && siteNav) {
+  navToggle.addEventListener('click', () => {
+    const isOpen = siteNav.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+  });
+  siteNav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      siteNav.classList.remove('open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
 // For quoted rates (as opposed to money amounts) a fixed 2 decimals rounds
 // small cross-rates to "0" — e.g. 1 RWF in USD is ~0.0007. Scale precision
 // up as the value gets smaller so it never collapses to zero.
