@@ -22,6 +22,17 @@ const FIAT_CURRENCIES = [
   { code: 'UGX', label: 'UGX — Ugandan Shilling' },
   { code: 'KES', label: 'KES — Kenyan Shilling' },
   { code: 'TZS', label: 'TZS — Tanzanian Shilling' },
+  { code: 'ZAR', label: 'ZAR — South African Rand' },
+  { code: 'NGN', label: 'NGN — Nigerian Naira' },
+  { code: 'GHS', label: 'GHS — Ghanaian Cedi' },
+  { code: 'USD', label: 'USD — US Dollar' },
+  { code: 'EUR', label: 'EUR — Euro' },
+  { code: 'GBP', label: 'GBP — British Pound' },
+  { code: 'INR', label: 'INR — Indian Rupee' },
+  { code: 'CNY', label: 'CNY — Chinese Yuan' },
+  { code: 'AED', label: 'AED — UAE Dirham' },
+  { code: 'CAD', label: 'CAD — Canadian Dollar' },
+  { code: 'AUD', label: 'AUD — Australian Dollar' },
 ];
 const USDT = { code: 'USDT', label: 'USDT — Tether' };
 const ALL_CURRENCIES = [USDT, ...FIAT_CURRENCIES];
@@ -34,9 +45,17 @@ const FLAG_SYMBOLS = {
   UGX: 'flag-ug',
   KES: 'flag-ke',
   TZS: 'flag-tz',
-  EUR: 'flag-eu',
-  USD: 'flag-us',
   ZAR: 'flag-za',
+  NGN: 'flag-ng',
+  GHS: 'flag-gh',
+  USD: 'flag-us',
+  EUR: 'flag-eu',
+  GBP: 'flag-gb',
+  INR: 'flag-in',
+  CNY: 'flag-cn',
+  AED: 'flag-ae',
+  CAD: 'flag-ca',
+  AUD: 'flag-au',
 };
 
 function withFlag(code) {

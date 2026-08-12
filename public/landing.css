@@ -526,7 +526,7 @@ main { position: relative; z-index: 1; }
   width: max-content;
   gap: 14px;
   white-space: nowrap;
-  animation: ticker-scroll 26s linear infinite;
+  animation: ticker-scroll 48s linear infinite;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
