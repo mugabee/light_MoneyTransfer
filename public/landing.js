@@ -142,6 +142,15 @@ function syncFlag(select, iconEl) {
 syncFlag(haveSelect, haveFlag);
 syncFlag(wantSelect, wantFlag);
 
+// /api/rates/p2p?fiat=X returns the price of 1 USDT in X, not a rate against
+// any other currency. USDT itself never goes through that endpoint (it's the
+// bridge asset, not a fiat code Binance P2P recognizes) so its "mid" is 1 by
+// definition — 1 USDT always equals 1 USDT.
+async function getMidInfo(code) {
+  if (code === 'USDT') return { mid: 1, margin: null };
+  return getClientRate(code);
+}
+
 async function runConversion() {
   const have = haveSelect.value;
   const want = wantSelect.value;
@@ -156,24 +165,22 @@ async function runConversion() {
   converterRateEl.innerHTML = 'Fetching live rate…';
 
   try {
-    let result;
-    let rateLine;
+    // Same math as the rates board: bridge through each currency's raw mid
+    // price (not a pre-margined rate) to get a fair cross-rate, then apply
+    // the margin once on that cross-rate. The previous per-leg approach had
+    // two bugs: for fiat->fiat pairs the (1-margin) factor applied to both
+    // legs cancelled out algebraically, quoting the raw market rate with no
+    // margin at all; for fiat->USDT it used the marked-down "buy" rate where
+    // it should have used the marked-up "sell" rate, handing customers more
+    // USDT than intended. This way the converter always agrees with what the
+    // board shows for the same pair, and margin is never silently lost.
+    const [haveInfo, wantInfo] = await Promise.all([getMidInfo(have), getMidInfo(want)]);
+    const margin = haveInfo.margin ?? wantInfo.margin ?? 2;
+    const crossMid = wantInfo.mid / haveInfo.mid; // units of `want` per 1 `have`
+    const rate = crossMid * (1 - margin / 100);
 
-    if (have === 'USDT' && want !== 'USDT') {
-      const { clientRate } = await getClientRate(want);
-      result = amount * clientRate;
-      rateLine = `1 ${withFlag('USDT')} ≈ ${fmtRate(clientRate)} ${withFlag(want)}`;
-    } else if (have !== 'USDT' && want === 'USDT') {
-      const { clientRate } = await getClientRate(have);
-      result = clientRate > 0 ? amount / clientRate : 0;
-      rateLine = `1 ${withFlag('USDT')} ≈ ${fmtRate(clientRate)} ${withFlag(have)}`;
-    } else {
-      // fiat -> fiat, routed through USDT
-      const [haveRate, wantRate] = await Promise.all([getClientRate(have), getClientRate(want)]);
-      const usdtAmount = haveRate.clientRate > 0 ? amount / haveRate.clientRate : 0;
-      result = usdtAmount * wantRate.clientRate;
-      rateLine = `1 ${withFlag(have)} ≈ ${fmtRate(wantRate.clientRate / haveRate.clientRate)} ${withFlag(want)}`;
-    }
+    const result = amount * rate;
+    const rateLine = `1 ${withFlag(have)} ≈ ${fmtRate(rate)} ${withFlag(want)}`;
 
     resultOutput.textContent = fmt(result);
     converterRateEl.innerHTML = rateLine;
@@ -294,15 +301,6 @@ const boardNote = document.getElementById('board-note');
 
 if (boardBaseSelect) {
   populateSelect(boardBaseSelect, 'RWF');
-}
-
-// /api/rates/p2p?fiat=X returns the price of 1 USDT in X, not a rate against
-// any other currency. USDT itself never goes through that endpoint (it's the
-// bridge asset, not a fiat code Binance P2P recognizes) so its "mid" is 1 by
-// definition — 1 USDT always equals 1 USDT.
-async function getMidInfo(code) {
-  if (code === 'USDT') return { mid: 1, margin: null };
-  return getClientRate(code);
 }
 
 async function loadRatesBoard() {
