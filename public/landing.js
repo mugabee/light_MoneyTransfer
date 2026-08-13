@@ -298,9 +298,46 @@ const boardBaseFlag = document.getElementById('board-base-flag');
 const boardBuyHead = document.getElementById('board-buy-head');
 const boardSellHead = document.getElementById('board-sell-head');
 const boardNote = document.getElementById('board-note');
+const boardSearchInput = document.getElementById('board-search');
 
 if (boardBaseSelect) {
   populateSelect(boardBaseSelect, 'RWF');
+}
+
+// Lets the search box match on the currency name too (e.g. typing "kenya"
+// or "shilling" finds KES), not just the 3-letter code.
+const CURRENCY_SEARCH_TEXT = Object.fromEntries(
+  ALL_CURRENCIES.map((c) => [c.code, `${c.code} ${c.label}`.toLowerCase()])
+);
+
+let lastBoardRows = []; // cached so typing in the search box doesn't refetch
+
+function renderBoardRows() {
+  if (!boardTbody) return;
+  const query = boardSearchInput ? boardSearchInput.value.trim().toLowerCase() : '';
+  const rows = query
+    ? lastBoardRows.filter((r) => (CURRENCY_SEARCH_TEXT[r.code] || r.code.toLowerCase()).includes(query))
+    : lastBoardRows;
+
+  if (!rows.length) {
+    boardTbody.innerHTML = `<tr><td colspan="3" class="board-unavailable">No currency matches your search.</td></tr>`;
+    return;
+  }
+
+  boardTbody.innerHTML = rows
+    .map((r) =>
+      r.ok
+        ? `<tr>
+             <td class="board-currency">${withFlag(r.code)}</td>
+             <td>${fmtRate(r.buyRate)}</td>
+             <td>${fmtRate(r.sellRate)}</td>
+           </tr>`
+        : `<tr>
+             <td class="board-currency">${withFlag(r.code)}</td>
+             <td colspan="2" class="board-unavailable">Rate unavailable</td>
+           </tr>`
+    )
+    .join('');
 }
 
 async function loadRatesBoard() {
@@ -327,7 +364,7 @@ async function loadRatesBoard() {
 
   const rowCodes = BOARD_ORDER.filter((code) => code !== baseCode);
 
-  const rows = await Promise.all(
+  lastBoardRows = await Promise.all(
     rowCodes.map(async (code) => {
       try {
         const x = await getMidInfo(code);
@@ -345,20 +382,11 @@ async function loadRatesBoard() {
     })
   );
 
-  boardTbody.innerHTML = rows
-    .map((r) =>
-      r.ok
-        ? `<tr>
-             <td class="board-currency">${withFlag(r.code)}</td>
-             <td>${fmtRate(r.buyRate)}</td>
-             <td>${fmtRate(r.sellRate)}</td>
-           </tr>`
-        : `<tr>
-             <td class="board-currency">${withFlag(r.code)}</td>
-             <td colspan="2" class="board-unavailable">Rate unavailable</td>
-           </tr>`
-    )
-    .join('');
+  renderBoardRows();
+}
+
+if (boardSearchInput) {
+  boardSearchInput.addEventListener('input', renderBoardRows);
 }
 
 if (boardBaseSelect) {

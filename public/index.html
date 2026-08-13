@@ -457,12 +457,19 @@
     <h2>Today's rates board</h2>
     <p class="section-sub">Just like a forex bureau board — pick a currency to compare against.</p>
 
-    <div class="board-base-picker">
-      <span class="converter-label">Compare against</span>
-      <div class="currency-select-wrap">
-        <svg class="flag-icon" id="board-base-flag"><use href="#flag-rw"/></svg>
-        <select id="board-base"></select>
+    <div class="board-controls">
+      <div class="board-base-picker">
+        <span class="converter-label">Compare against</span>
+        <div class="currency-select-wrap">
+          <svg class="flag-icon" id="board-base-flag"><use href="#flag-rw"/></svg>
+          <select id="board-base"></select>
+        </div>
       </div>
+
+      <label class="board-search-wrap">
+        <span class="converter-label">Find a currency</span>
+        <input type="search" id="board-search" placeholder="e.g. USD, KES, Kenya…" autocomplete="off" />
+      </label>
     </div>
 
     <div class="board-wrap">
