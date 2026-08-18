@@ -2,7 +2,7 @@
 
 **Fast, transparent money transfer — with the live currency infrastructure of a forex bureau, built for the web.**
 
-🔗 **Live app:** [https://ledger-khml.onrender.com](https://ledger-khml.onrender.com)
+🔗 **Live app:** [https://lightmt.com](https://lightmt.com)
 
 Ledger is a full money transfer platform: a public-facing site where customers get live, worldwide exchange rates and send money in a few clicks, paired with a staff CRM for managing contacts and transaction history. It's built on Node.js, Express, and Postgres, and deployed on Render with zero manual database migrations — the schema provisions itself on first boot.
 
