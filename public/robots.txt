@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /login.html
+Disallow: /dashboard.html
+Disallow: /api/
+
+Sitemap: https://lightmt.com/sitemap.xml
