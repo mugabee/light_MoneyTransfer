@@ -65,6 +65,8 @@ router.get('/webhook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
+  console.log(`[whatsapp] GET /webhook verification attempt — mode=${mode}, tokenMatches=${token === process.env.WHATSAPP_VERIFY_TOKEN}`);
+
   if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
     return res.status(200).send(challenge);
   }
@@ -74,14 +76,23 @@ router.get('/webhook', (req, res) => {
 router.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(200); // ack immediately, Meta expects a fast response
 
+  // Logged unconditionally, before anything else, so Render's logs show
+  // definitively whether Meta ever reached this endpoint at all — separate
+  // from whether the message content parsed or processed successfully.
+  console.log('[whatsapp] POST /webhook received:', JSON.stringify(req.body));
+
   try {
     const entry = req.body?.entry?.[0];
     const change = entry?.changes?.[0]?.value;
     const message = change?.messages?.[0];
-    if (!message || message.type !== 'text') return;
+    if (!message || message.type !== 'text') {
+      console.log('[whatsapp] No text message in payload — ignoring (likely a status update, not a new message).');
+      return;
+    }
 
     const from = message.from; // phone number, no '+'
     const text = message.text.body;
+    console.log(`[whatsapp] Text message from ${from}: "${text}"`);
 
     const existing = await pool.query(
       'SELECT * FROM contacts WHERE handle = $1 AND channel = $2',
@@ -95,12 +106,14 @@ router.post('/webhook', express.json(), async (req, res) => {
       );
       contact = rows[0];
       await logAudit('contact', contact.id, 'create', { source: 'WhatsApp inbound' });
+      console.log(`[whatsapp] Created new contact #${contact.id} for ${from}`);
     }
 
     const reply = await buildReply(text);
+    console.log(`[whatsapp] Sending reply to ${from}: "${reply}"`);
     await sendWhatsAppMessage(from, reply);
   } catch (err) {
-    console.error('Error handling WhatsApp webhook:', err);
+    console.error('[whatsapp] Error handling webhook:', err);
   }
 });
 
