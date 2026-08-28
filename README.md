@@ -1,104 +1,71 @@
 # Ledger
 
-**Fast, transparent money transfer — with the live currency infrastructure of a forex bureau, built for the web.**
+**Live app:** [lightmt.com](https://lightmt.com)
 
-🔗 **Live app:** [https://lightmt.com](https://lightmt.com)
-
-Ledger is a full money transfer platform: a public-facing site where customers get live, worldwide exchange rates and send money in a few clicks, paired with a staff CRM for managing contacts and transaction history. It's built on Node.js, Express, and Postgres, and deployed on Render with zero manual database migrations — the schema provisions itself on first boot.
-
----
+Ledger is the platform behind Light Money Transfer: a public site where customers get live exchange rates and send money in a few clicks, and a staff CRM behind it for managing contacts and transaction history. Node.js, Express, and Postgres, deployed on Render. The database schema provisions itself on first boot, so there's no migration step to run.
 
 ## Why it's built this way
 
-Most small money-transfer operations either rely on a spreadsheet and word-of-mouth rates, or bolt together a website that quotes stale, manually-updated numbers. Ledger does neither:
-
-- **Rates are live, not guessed.** Every quote is pulled from real-time market data, cached briefly to stay fast, and refreshed continuously — never a static number someone forgot to update.
-- **Pricing is transparent, not hidden.** The public site shows customers exactly how a transfer works and what rate they're getting, before they commit to anything.
-- **It scales past one currency pair.** Sixteen currencies across Africa, the Americas, Europe, and Asia — each with a real flag icon, not a broken emoji — with a forex-bureau-style rates board that lets a customer compare *any* currency against *any* other, not just the home currency.
-- **It's a real product, not a prototype.** Responsive down to mobile, accessible dropdowns, graceful degradation when an upstream data source hiccups, and a staff-side audit log on every write.
+Small money-transfer operations usually run on a spreadsheet and word-of-mouth rates, or a website quoting numbers someone typed in by hand and forgot to update. Ledger pulls quotes from live market data instead, refreshed continuously, so the number on the screen is the number the market is actually giving. It covers sixteen currencies across Africa, the Americas, Europe, and Asia, with a rates board that lets a customer compare any pair, not just against the home currency. And it's built to behave like production software should — responsive on mobile, an audit log on every staff write, and it degrades gracefully instead of falling over when the upstream rate source hiccups.
 
 ## What's included
 
-### Public site
-- Animated hero with a live, worldwide currency network visualization
-- A stacked "You send / Recipient gets" converter with quick-amount presets, instant swap, and live flag icons
-- A forex-bureau-style **rates board** — buy/sell prices for every supported currency, with a picker to compare against any base currency, not just RWF
-- Scroll-aware UI: progress bar, reveal animations, mobile hamburger nav
-- FAQ, how-it-works, and direct WhatsApp/Telegram contact links
+**Public site**
+An animated hero with a live currency network visualization, a "you send / recipient gets" converter with quick-amount presets and instant swap, and a forex-bureau-style rates board with a searchable currency picker. FAQ, how-it-works, direct WhatsApp/Telegram contact links, plus the basics a real site needs: a proper 404 page, security headers, sitemap and robots.txt, and terms/privacy pages.
 
-### Staff dashboard
-- Login-gated — `/dashboard.html` and all of `/api/contacts` and `/api/transactions` require an authenticated session (JWT in an httpOnly cookie); anyone else is redirected to `/login.html`
-- Contact management, tagged by channel (WhatsApp, Telegram, Instagram, Facebook, phone)
-- Full transaction history per contact
-- **Rate settings panel** — the admin adjusts the margin percentage live, from the browser, no redeploy or code change required
-- Every write — create, update, delete, settings changes — recorded to an audit log
+**Staff dashboard**
+Login-gated behind a JWT session in an httpOnly cookie — `/dashboard.html`, `/api/contacts`, and `/api/transactions` all redirect to `/login.html` for anyone unauthenticated. Contacts are tagged by channel (WhatsApp, Telegram, Instagram, Facebook, phone), each with full transaction history. A rate settings panel lets the admin adjust the margin percentage live from the browser — no redeploy, no code change. Every write is recorded to an audit log.
 
-### Rate engine
-- Live buy/sell/mid pricing sourced from real P2P market data, cached server-side
-- Only quotes off advertisers holding enough volume to fill a meaningful trade (configurable via `RATE_MIN_VOLUME_USDT`), so a thin ad with a great headline price can't skew the quoted rate
-- Margin lives in the database, not an env var — the admin sets it from the dashboard, and it applies immediately, everywhere: the site, the WhatsApp bot, and the rates board all read the same value, so there's no drift between what different parts of the app quote
-- Cross-currency rates computed properly through a common bridge asset, with precision that scales to the value of the currency (so a sub-cent rate never silently rounds to zero)
+**Rate engine**
+Buy/sell/mid pricing sourced from live P2P market data, cached server-side. It only quotes off advertisers holding enough volume to actually fill a trade — a thin ad with a great headline price doesn't get to set the rate. The margin itself lives in the database rather than an env var, so when the admin changes it from the dashboard, it applies immediately and everywhere: the site, the WhatsApp bot, and the rates board all read the same value, with no drift between what different parts of the app quote. Cross-currency rates route through a common bridge asset, and precision scales to the value of the currency so a sub-cent rate doesn't silently round to zero.
 
-### WhatsApp integration (optional)
-- Auto-replies to incoming messages with today's rate, a how-it-works explanation, or a greeting, via the WhatsApp Cloud API
-- Every inbound number is logged as a contact automatically
+**WhatsApp integration**
+Auto-replies to incoming messages with today's rate, a how-it-works explanation, or a greeting, via the WhatsApp Cloud API. Every inbound number gets logged as a contact automatically.
 
 ## Tech stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Runtime | Node.js + Express | Simple, well-understood, easy to deploy anywhere |
-| Database | Postgres | Real persistence on Render's free tier (no disk required), portable to any Postgres host |
-| Frontend | Vanilla HTML/CSS/JS | No build step, no framework overhead, fast to load |
-| Hosting | Render | Auto-deploys on every push to `main` |
-
-No unnecessary dependencies, no framework lock-in — just what the product needs.
+Node.js and Express for the backend — simple, well-understood, deployable anywhere. Postgres for persistence, portable to any host. Vanilla HTML/CSS/JS on the frontend, no build step, no framework overhead. Hosted on Render, auto-deploying on every push to `main`. No dependency made it in that the product didn't actually need.
 
 ## Local development
 
-Requires a Postgres database. The free tier of [Neon](https://neon.tech) or [Supabase](https://supabase.com) both work — create a project, copy the connection string.
+Requires a Postgres database — the free tier of [Neon](https://neon.tech) or [Supabase](https://supabase.com) both work. Create a project, copy the connection string.
 
 ```bash
 npm install
-cp .env.example .env      # fill in DATABASE_URL, RATE_FIAT, RATE_MARGIN_PERCENT, and WhatsApp credentials if using that feature
+cp .env.example .env
 ```
 
-Then set up admin login — generate a password hash locally (nothing is sent anywhere) and add it, along with a username and a random JWT secret, to `.env`:
+Fill in `DATABASE_URL` in `.env`, then set up admin login. Nothing here is sent anywhere — the hash is generated locally:
 
 ```bash
 node scripts/hash-password.js "your-chosen-password"
-# paste the printed ADMIN_PASSWORD_HASH line into .env, and set ADMIN_USERNAME
+# paste the printed ADMIN_PASSWORD_HASH into .env, and set ADMIN_USERNAME
+
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-# paste the output into JWT_SECRET in .env
+# paste the output into JWT_SECRET
 ```
 
 ```bash
 npm start
 ```
 
-Tables are created automatically on startup if they don't already exist — no migration step.
-
 - Site: `http://localhost:3000`
 - Staff login: `http://localhost:3000/login.html`
 - Dashboard (requires login): `http://localhost:3000/dashboard.html`
 - WhatsApp webhook: `http://localhost:3000/whatsapp/webhook`
 
-The site, dashboard, and rate API work as soon as `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `JWT_SECRET` are set. WhatsApp auto-reply additionally requires:
-
-1. A verified Meta Business account
-2. A WhatsApp Business phone number registered through Meta's dashboard → gives you `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`
-3. A public HTTPS URL for the webhook (use `ngrok` for local testing)
+The site, dashboard, and rate API work as soon as `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `JWT_SECRET` are set. WhatsApp auto-reply additionally needs a verified Meta Business account, a WhatsApp Business phone number registered through Meta's dashboard (which gives you `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`), and a public HTTPS URL for the webhook — `ngrok` works for local testing.
 
 ## Deployment
 
-Configured for [Render](https://render.com) via `render.yaml` — connect the repo, set `DATABASE_URL`, deploy. Every push to `main` redeploys automatically.
+Configured for [Render](https://render.com) via `render.yaml`.
 
-1. Create a free Postgres database (Neon or Supabase) and copy its connection string
-2. Generate an admin password hash locally: `node scripts/hash-password.js "your-chosen-password"`
-3. Render → **New** → **Blueprint**, connect this repo
-4. When prompted for env vars: paste the connection string into `DATABASE_URL`, choose an `ADMIN_USERNAME`, paste the hash from step 2 into `ADMIN_PASSWORD_HASH`, and set the WhatsApp vars if using that feature. `JWT_SECRET` is generated automatically by Render — no action needed.
+1. Create a free Postgres database (Neon or Supabase) and copy its connection string.
+2. Generate an admin password hash locally: `node scripts/hash-password.js "your-chosen-password"`.
+3. In Render: **New** → **Blueprint**, connect this repo.
+4. When prompted for env vars, paste the connection string into `DATABASE_URL`, choose an `ADMIN_USERNAME`, and paste the hash from step 2 into `ADMIN_PASSWORD_HASH`. Set the WhatsApp vars if using that feature. `JWT_SECRET` is generated automatically by Render.
 
-Render's free tier doesn't support persistent disks, which is why this runs on Postgres rather than a local file — a hosted database keeps data intact across every deploy and restart, at no cost.
+Every push to `main` redeploys automatically. Render's free tier has no persistent disk, which is the actual reason this runs on Postgres instead of a local file — a hosted database survives every deploy and restart, at no cost.
 
 ## API reference
 
@@ -107,24 +74,16 @@ Render's free tier doesn't support persistent disks, which is why this runs on P
 | `/api/auth/login` | POST | — | `{ username, password }` → sets the session cookie |
 | `/api/auth/logout` | POST | — | Clears the session cookie |
 | `/api/auth/me` | GET | — | Returns the current session's username, if any |
-| `/api/contacts` | GET/POST | ✅ | List / create contacts |
-| `/api/contacts/:id` | GET/PUT/DELETE | ✅ | Read / update / delete a contact |
-| `/api/transactions` | GET/POST | ✅ | List (optionally `?contact_id=`) / create transactions |
-| `/api/transactions/:id` | DELETE | ✅ | Delete a transaction |
-| `/api/settings` | GET/PUT | ✅ | Read / update the rate margin percentage |
+| `/api/contacts` | GET/POST | required | List / create contacts |
+| `/api/contacts/:id` | GET/PUT/DELETE | required | Read / update / delete a contact |
+| `/api/transactions` | GET/POST | required | List (optionally `?contact_id=`) / create transactions |
+| `/api/transactions/:id` | DELETE | required | Delete a transaction |
+| `/api/settings` | GET/PUT | required | Read / update the rate margin percentage |
 | `/api/rates/p2p?fiat=RWF` | GET | — | Live buy/sell/mid rate plus margin-adjusted client rate for USDT against the given currency |
 | `/whatsapp/webhook` | GET/POST | — | Meta verification handshake / incoming message handler |
 
-## Known limitations & roadmap
+## Known limitations
 
-Being upfront about what's not built yet is part of shipping something real:
+One admin account, via env vars — not a multi-user system with roles. That's fine for a one-operator business, and would need a real users table to grow past it. There's no compliance layer built in: money transfer and currency exchange are regulated activities in most jurisdictions, and licensing, KYC/AML, and reporting are business decisions kept deliberately separate from the software. The upstream rate data isn't an official, documented API either, so it can change shape without notice — the rate engine is written to fail gracefully rather than crash if that happens.
 
-- **Single admin account** — one username/password pair via env vars, not a multi-user system with roles. Fine for a one-operator business; would need a real users table to grow past that.
-- **No compliance layer built in** — money transfer and currency exchange are regulated activities in most jurisdictions (licensing, KYC/AML, reporting thresholds). That's a business decision for the operator, kept deliberately separate from the software.
-- **Upstream rate data isn't an official, documented API** — it can change shape without notice. The rate engine is written to fail gracefully rather than crash if that happens.
-
-**Planned next:**
-- Multi-user accounts with roles, for teams past a single operator
-- CSV export/backup for the database
-- Auto-post daily rates to a Telegram channel
-- WhatsApp message templates for business-initiated messages
+Next up: multi-user accounts with roles, CSV export/backup for the database, daily rates auto-posted to a Telegram channel, and WhatsApp message templates for business-initiated messages.
